@@ -8,7 +8,7 @@ import (
 )
 
 type NotificationService interface {
-	Notify(notifyUserDTO *dto.NotifyUserRequest)
+	Notify(notifyUserDTO *dto.NotifyUserRequest) error
 }
 
 type DefaultNotificationService struct {
@@ -39,15 +39,19 @@ func initService(notifierMux *NotifierMux) NotificationService {
 	}
 }
 
-func (s *DefaultNotificationService) Notify(notifyUserDTO *dto.NotifyUserRequest) {
+func (s *DefaultNotificationService) Notify(notifyUserDTO *dto.NotifyUserRequest) error {
 	channel := notifyUserDTO.Channel
 	notifier, ok := s.notifierMux.notifiers[channel]
 	if ok {
 		err := notifier.Send(notifyUserDTO)
 		if err != nil {
-			log.Fatalf("Error sending notification :%v", err)
+			log.Printf("Error sending notification :%v", err)
+			return err
 		}
 	} else {
-		log.Fatalf("Error sending notification: %v", errors.New("channel doesn't exist"))
+		err := errors.New("channel doesn't exist")
+		log.Printf("Error sending notification: %v", err)
+		return err
 	}
+	return nil
 }

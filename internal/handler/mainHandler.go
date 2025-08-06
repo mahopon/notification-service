@@ -2,9 +2,10 @@ package handler
 
 import (
 	"encoding/json"
+	"net/http"
+
 	dto "github.com/mahopon/notification-service/internal/dto"
 	notifySvc "github.com/mahopon/notification-service/internal/services"
-	"net/http"
 )
 
 type MainHandler struct {
@@ -48,5 +49,8 @@ func (h *MainHandler) NotifyHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error reading request body", http.StatusBadRequest)
 		return
 	}
-	h.service.Notify(incomingReq)
+	err = h.service.Notify(incomingReq)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
 }
