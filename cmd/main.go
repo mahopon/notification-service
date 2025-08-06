@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/mahopon/notification-service/internal/config"
 	"github.com/mahopon/notification-service/internal/handler"
 	infra "github.com/mahopon/notification-service/internal/infra"
 	route "github.com/mahopon/notification-service/internal/routes"
@@ -13,9 +14,16 @@ import (
 )
 
 func main() {
-	infra.Setup()
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
 	router := mux.NewRouter()
-	notificationService := service.Setup(infra.EmailNotif)
+
+	// Notifiers
+	emailNotifier := infra.NewMailNotifier(&cfg.Mail)
+
+	notificationService := service.Setup(emailNotifier)
 	notificationHandler := handler.NewNotificationHandler(notificationService)
 	route.Setup(router, notificationHandler)
 	PORT := 8080

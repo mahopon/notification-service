@@ -12,7 +12,8 @@ type EmailNotifier struct {
 	client *mail.Client
 }
 
-func NewMailNotifier(host, email, password string) *EmailNotifier {
+func NewMailNotifier(cfg *config.MailConfig) *EmailNotifier {
+	host, email, password := cfg.Host, cfg.Email, cfg.Password
 	client, err := mail.NewClient(host, mail.WithSMTPAuth(mail.SMTPAuthPlain),
 		mail.WithUsername(email), mail.WithPassword(password))
 	if err != nil {

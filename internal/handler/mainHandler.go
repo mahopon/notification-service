@@ -16,6 +16,10 @@ func NewNotificationHandler(service notifySvc.NotificationService) *MainHandler 
 	return &MainHandler{service: service}
 }
 
+type Reply struct {
+	Response string `json:"message"`
+}
+
 func (h *MainHandler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -23,9 +27,7 @@ func (h *MainHandler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	reply := struct {
-		Response string `json:"response"`
-	}{
+	reply := &Reply{
 		Response: "Server up!",
 	}
 
@@ -52,5 +54,15 @@ func (h *MainHandler) NotifyHandler(w http.ResponseWriter, r *http.Request) {
 	err = h.service.Notify(incomingReq)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+
+	reply := &Reply{
+		Response: "Email sent",
+	}
+
+	err = json.NewEncoder(w).Encode(reply)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }
