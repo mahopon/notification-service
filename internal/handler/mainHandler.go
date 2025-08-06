@@ -2,11 +2,20 @@ package handler
 
 import (
 	"encoding/json"
-	emailSvc "github.com/mahopon/notification-service/internal/services"
+	dto "github.com/mahopon/notification-service/internal/dto"
+	notifySvc "github.com/mahopon/notification-service/internal/services"
 	"net/http"
 )
 
-func StatusHandler(w http.ResponseWriter, r *http.Request) {
+type MainHandler struct {
+	service notifySvc.NotificationService
+}
+
+func NewNotificationHandler(service notifySvc.NotificationService) *MainHandler {
+	return &MainHandler{service: service}
+}
+
+func (h *MainHandler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 	}
@@ -26,24 +35,18 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func EmailHandler(w http.ResponseWriter, r *http.Request) {
+func (h *MainHandler) NotifyHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	var emailReq struct {
-		To   string `json:"to"`
-		Sub  string `json:"sub"`
-		Body string `json:"body"`
-	}
+	var incomingReq *dto.NotifyUserRequest
 
-	err := json.NewDecoder(r.Body).Decode(&emailReq)
+	err := json.NewDecoder(r.Body).Decode(&incomingReq)
 	if err != nil {
 		http.Error(w, "Error reading request body", http.StatusBadRequest)
 		return
 	}
-	emailSvc.SendEmail(emailReq.To, emailReq.Sub, "plain", emailReq.Body)
-	//log.Printf("To: %s, Sub: %s, Body: %s", emailReq.To, emailReq.Sub, emailReq.Body)
-
+	h.service.Notify(incomingReq)
 }

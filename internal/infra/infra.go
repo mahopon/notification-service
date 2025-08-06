@@ -2,11 +2,10 @@ package infra
 
 import (
 	cfg "github.com/mahopon/notification-service/internal/config"
-	"github.com/wneessen/go-mail"
 	"log"
 )
 
-var mailClient *mail.Client
+var EmailNotif *EmailNotifier
 
 func Setup() {
 	config, err := cfg.Load()
@@ -16,5 +15,5 @@ func Setup() {
 	} else {
 		log.Println("Loaded config")
 	}
-	mailClient = initMailClient(config.Mail.Host, config.Mail.Email, config.Mail.Password)
+	EmailNotif = NewMailNotifier(config.Mail.Host, config.Mail.Email, config.Mail.Password)
 }

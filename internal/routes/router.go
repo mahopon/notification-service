@@ -2,15 +2,11 @@ package routes
 
 import (
 	"github.com/gorilla/mux"
-	"github.com/mahopon/notification-service/internal/handler"
-	"net/http"
+	handler "github.com/mahopon/notification-service/internal/handler"
 )
 
-func Setup() http.Handler {
-	r := mux.NewRouter()
+func Setup(r *mux.Router, mainHandler *handler.MainHandler) {
 	r.StrictSlash(true)
-
-	r.HandleFunc("/", handler.StatusHandler)
-	r.HandleFunc("/email", handler.EmailHandler)
-	return r
+	r.HandleFunc("/", mainHandler.StatusHandler)
+	r.HandleFunc("/notify", mainHandler.NotifyHandler)
 }
