@@ -24,7 +24,7 @@ func NewMailNotifier(cfg *config.MailConfig) *EmailNotifier {
 	}
 }
 
-func (eN *EmailNotifier) Send(notifyUserDTO *dto.NotifyUserRequest) error {
+func (eN *EmailNotifier) Send(notifyUserDTO *dto.NotifyUserRequest) (string, error) {
 	message := mail.NewMsg()
 	from := fmt.Sprintf("Botto <%s>", config.Cfg.Mail.Email)
 	if err := message.From(from); err != nil {
@@ -52,5 +52,5 @@ func (eN *EmailNotifier) Send(notifyUserDTO *dto.NotifyUserRequest) error {
 	} else {
 		log.Printf("Sent email to: %s, with body:\n%s", notifyUserDTO.To, notifyUserDTO.Body)
 	}
-	return nil
+	return "Email sent", nil
 }

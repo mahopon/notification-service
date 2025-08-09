@@ -21,9 +21,10 @@ func main() {
 	router := mux.NewRouter()
 
 	// Notifiers
-	emailNotifier := infra.NewMailNotifier(&cfg.Mail)
+	emailNotifier := infra.NewMailNotifier(cfg.Mail)
+	telegramNotifier := infra.NewTelegramNotifier(cfg.Telegram)
 
-	notificationService := service.Setup(emailNotifier)
+	notificationService := service.Setup(emailNotifier, telegramNotifier)
 	notificationHandler := handler.NewNotificationHandler(notificationService)
 	route.Setup(router, notificationHandler)
 	PORT := 8080

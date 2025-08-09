@@ -51,16 +51,16 @@ func (h *MainHandler) NotifyHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error reading request body", http.StatusBadRequest)
 		return
 	}
-	err = h.service.Notify(incomingReq)
+	reply, err := h.service.Notify(incomingReq)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
-	reply := &Reply{
-		Response: "Email sent",
+	response := &Reply{
+		Response: reply,
 	}
 
-	err = json.NewEncoder(w).Encode(reply)
+	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
