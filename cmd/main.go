@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/mahopon/notification-service/internal/config"
 	"github.com/mahopon/notification-service/internal/handler"
-	infra "github.com/mahopon/notification-service/internal/infra"
+	"github.com/mahopon/notification-service/internal/infra"
 	route "github.com/mahopon/notification-service/internal/routes"
 	service "github.com/mahopon/notification-service/internal/services"
 )
