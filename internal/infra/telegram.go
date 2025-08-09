@@ -13,6 +13,10 @@ type TelegramNotifier struct {
 }
 
 func NewTelegramNotifier(cfg *config.TGConfig) *TelegramNotifier {
+	if cfg == nil {
+		return nil
+	}
+
 	bot, err := tgbotapi.NewBotAPI(cfg.Key)
 	if err != nil {
 		log.Fatalf("Error connecting to Telegram API: %v", err)

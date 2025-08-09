@@ -28,15 +28,27 @@ var doOnce sync.Once
 func Load() (*Config, error) {
 	doOnce.Do(func() {
 		_ = godotenv.Load()
-		Cfg = &Config{
-			Mail: &MailConfig{
+
+		var mailConfig *MailConfig = nil
+		var telegramConfig *TGConfig = nil
+
+		if os.Getenv("MAIL_HOST") != "" && os.Getenv("MAIL_USER") != "" && os.Getenv("MAIL_PASSWORD") != "" {
+			mailConfig = &MailConfig{
 				Host:     os.Getenv("MAIL_HOST"),
 				Email:    os.Getenv("MAIL_USER"),
 				Password: os.Getenv("MAIL_PASSWORD"),
-			},
-			Telegram: &TGConfig{
+			}
+		}
+
+		if os.Getenv("TG_KEY") != "" {
+			telegramConfig = &TGConfig{
 				Key: os.Getenv("TG_KEY"),
-			},
+			}
+		}
+
+		Cfg = &Config{
+			Mail:     mailConfig,
+			Telegram: telegramConfig,
 		}
 	})
 	return Cfg, nil
