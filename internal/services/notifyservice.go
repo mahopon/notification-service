@@ -12,7 +12,12 @@ type NotificationService interface {
 }
 
 type DefaultNotificationService struct {
-	notifierMux *NotifierMux
+	NotifierMux NotifierRegistry
+}
+
+type NotifierRegistry interface {
+	Register(channel string, n Notifier)
+	Get(channel string) (Notifier, bool)
 }
 
 type Notifier interface {
@@ -20,28 +25,33 @@ type Notifier interface {
 }
 
 type NotifierMux struct {
-	notifiers map[string]Notifier
+	Notifiers map[string]Notifier
 }
 
 func (m *NotifierMux) Register(channel string, n Notifier) {
-	m.notifiers[channel] = n
+	m.Notifiers[channel] = n
+}
+
+func (m *NotifierMux) Get(channel string) (Notifier, bool) {
+	n, ok := m.Notifiers[channel]
+	return n, ok
 }
 
 func NewNotifierMux() *NotifierMux {
 	return &NotifierMux{
-		notifiers: make(map[string]Notifier),
+		Notifiers: make(map[string]Notifier),
 	}
 }
 
 func initService(notifierMux *NotifierMux) NotificationService {
 	return &DefaultNotificationService{
-		notifierMux: notifierMux,
+		NotifierMux: notifierMux,
 	}
 }
 
 func (s *DefaultNotificationService) Notify(notifyUserDTO *dto.NotifyUserRequest) (string, error) {
 	channel := notifyUserDTO.Channel
-	notifier, ok := s.notifierMux.notifiers[channel]
+	notifier, ok := s.NotifierMux.Get(channel)
 	var reply string
 	var err error
 	if ok {
