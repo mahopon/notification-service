@@ -2,6 +2,7 @@ package infra
 
 import (
 	"log"
+	"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	config "github.com/mahopon/notification-service/internal/config"
@@ -32,5 +33,10 @@ func NewTelegramNotifier(cfg *config.TGConfig) *TelegramNotifier {
 
 func (tN *TelegramNotifier) Send(notifyUserDTO *dto.NotifyUserRequest) (string, error) {
 	log.Printf("Received message, but send not implemented for Telegram, %v", notifyUserDTO.Body)
+	target, _ := strconv.ParseInt(notifyUserDTO.To, 10, 64)
+	body := notifyUserDTO.Body
+	msg := tgbotapi.NewMessage(target, body)
+	tN.Client.Send(msg)
+
 	return "Message sent", nil
 }

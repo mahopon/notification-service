@@ -23,13 +23,31 @@ func NewDatabaseConfig(cfg *config.DBConfig) *DatabaseConfig {
 	if err != nil {
 		log.Fatalf("DB not initialised: %v", err)
 	}
-	return &DatabaseConfig{
+	returnConfig := &DatabaseConfig{
 		Database: db,
 	}
+	returnConfig.initSchemas()
+	return returnConfig
 }
 
 func CloseDatabaseConfig(dbConfig *DatabaseConfig) {
 	dbConfig.Database.Close()
+}
+
+func (db *DatabaseConfig) initSchemas() {
+	err := db.Database.Update(func(tx *bolt.Tx) error {
+		buckets := []string{"user_chat"}
+		for _, b := range buckets {
+			if _, err := tx.CreateBucketIfNotExists([]byte(b)); err != nil {
+				return fmt.Errorf("create bucket %q: %w", b, err)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		db.Database.Close()
+		log.Fatal("ERROR: Unable to create schemas")
+	}
 }
 
 func (db *DatabaseConfig) Set(bucket, key, value string) error {
