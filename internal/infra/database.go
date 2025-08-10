@@ -1,8 +1,11 @@
 package infra
 
 import (
-	bolt "go.etcd.io/bbolt"
+	"fmt"
 	"log"
+
+	"github.com/mahopon/notification-service/internal/config"
+	bolt "go.etcd.io/bbolt"
 )
 
 type DatabaseConnection interface {
@@ -14,7 +17,8 @@ type DatabaseConfig struct {
 	Database *bolt.DB
 }
 
-func NewDatabaseConfig(dbLoc string) *DatabaseConfig {
+func NewDatabaseConfig(cfg *config.DBConfig) *DatabaseConfig {
+	dbLoc := cfg.Location
 	db, err := bolt.Open(dbLoc, 0600, nil)
 	if err != nil {
 		log.Fatalf("DB not initialised: %v", err)
@@ -24,10 +28,30 @@ func NewDatabaseConfig(dbLoc string) *DatabaseConfig {
 	}
 }
 
+func CloseDatabaseConfig(dbConfig *DatabaseConfig) {
+	dbConfig.Database.Close()
+}
+
 func (db *DatabaseConfig) Set(bucket, key, value string) error {
-	return nil
+	return db.Database.Update(func(tx *bolt.Tx) error {
+		b, _ := tx.CreateBucketIfNotExists([]byte(bucket))
+		return b.Put([]byte(key), []byte(value))
+	})
 }
 
 func (db *DatabaseConfig) Get(bucket, key string) (string, error) {
-	return "", nil
+	var value string
+	err := db.Database.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(bucket))
+		if b == nil {
+			return fmt.Errorf("bucket %q not found", bucket)
+		}
+		v := b.Get([]byte(key))
+		if v == nil {
+			return fmt.Errorf("key %q not found", key)
+		}
+		value = string(v)
+		return nil
+	})
+	return value, err
 }

@@ -5,6 +5,7 @@ import (
 	"log"
 
 	dto "github.com/mahopon/notification-service/internal/dto"
+	"github.com/mahopon/notification-service/internal/infra"
 )
 
 type NotificationService interface {
@@ -13,6 +14,7 @@ type NotificationService interface {
 
 type DefaultNotificationService struct {
 	NotifierMux NotifierRegistry
+	DB          *infra.DatabaseConfig
 }
 
 type NotifierRegistry interface {
@@ -43,9 +45,10 @@ func NewNotifierMux() *NotifierMux {
 	}
 }
 
-func initService(notifierMux *NotifierMux) NotificationService {
+func initService(dbConfig *infra.DatabaseConfig, notifierMux *NotifierMux) NotificationService {
 	return &DefaultNotificationService{
 		NotifierMux: notifierMux,
+		DB:          dbConfig,
 	}
 }
 
@@ -54,6 +57,18 @@ func (s *DefaultNotificationService) Notify(notifyUserDTO *dto.NotifyUserRequest
 	notifier, ok := s.NotifierMux.Get(channel)
 	var reply string
 	var err error
+
+	if channel == "telegram" {
+		bucket := "user_chat"
+		to := notifyUserDTO.To
+		target, err := s.DB.Get(bucket, to)
+		if err != nil {
+			log.Printf("ERROR: %v", err)
+			return "", err
+		}
+		notifyUserDTO.To = target
+	}
+
 	if ok {
 		reply, err = notifier.Send(notifyUserDTO)
 		if err != nil {

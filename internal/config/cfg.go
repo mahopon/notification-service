@@ -1,6 +1,7 @@
 package config
 
 import (
+	"log"
 	"os"
 	"sync"
 
@@ -10,6 +11,7 @@ import (
 type Config struct {
 	Mail     *MailConfig
 	Telegram *TGConfig
+	Database *DBConfig
 }
 
 type MailConfig struct {
@@ -22,12 +24,25 @@ type TGConfig struct {
 	Key string
 }
 
+type DBConfig struct {
+	Location string
+}
+
 var Cfg *Config
 var doOnce sync.Once
 
 func Load() (*Config, error) {
 	doOnce.Do(func() {
 		_ = godotenv.Load()
+
+		if os.Getenv("DB_LOC") == "" {
+			log.Fatal("No DB_LOC in env file")
+		}
+
+		cwd, _ := os.Getwd()
+		dbConfig := &DBConfig{
+			Location: cwd + os.Getenv("DB_LOC"),
+		}
 
 		var mailConfig *MailConfig = nil
 		var telegramConfig *TGConfig = nil
@@ -47,6 +62,7 @@ func Load() (*Config, error) {
 		}
 
 		Cfg = &Config{
+			Database: dbConfig,
 			Mail:     mailConfig,
 			Telegram: telegramConfig,
 		}
