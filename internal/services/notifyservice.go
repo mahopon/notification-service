@@ -2,14 +2,18 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"log"
+	"strconv"
 
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	dto "github.com/mahopon/notification-service/internal/dto"
 	"github.com/mahopon/notification-service/internal/infra"
 )
 
 type NotificationService interface {
 	Notify(notifyUserDTO *dto.NotifyUserRequest) (string, error)
+	HandleUpdate(update tgbotapi.Update) error
 }
 
 type DefaultNotificationService struct {
@@ -81,4 +85,24 @@ func (s *DefaultNotificationService) Notify(notifyUserDTO *dto.NotifyUserRequest
 		return "", err
 	}
 	return reply, nil
+}
+
+func (s *DefaultNotificationService) HandleUpdate(update tgbotapi.Update) error {
+	if update.Message == nil || !update.Message.IsCommand() {
+		return fmt.Errorf("ERROR: %v", "invalid message")
+	}
+	bucket := "user_chat"
+	switch update.Message.Command() {
+	case "start":
+		userID := update.Message.Chat.UserName
+		_, err := s.DB.Get(bucket, userID)
+		if err != nil {
+			chatID := strconv.FormatInt(update.Message.Chat.ID, 10)
+			err = s.DB.Set(bucket, userID, chatID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

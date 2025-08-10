@@ -21,7 +21,8 @@ type MailConfig struct {
 }
 
 type TGConfig struct {
-	Key string
+	Key   string
+	Debug bool
 }
 
 type DBConfig struct {
@@ -31,7 +32,7 @@ type DBConfig struct {
 var Cfg *Config
 var doOnce sync.Once
 
-func Load() (*Config, error) {
+func Load(db_debug bool) (*Config, error) {
 	doOnce.Do(func() {
 		_ = godotenv.Load()
 
@@ -57,7 +58,8 @@ func Load() (*Config, error) {
 
 		if os.Getenv("TG_KEY") != "" {
 			telegramConfig = &TGConfig{
-				Key: os.Getenv("TG_KEY"),
+				Key:   os.Getenv("TG_KEY"),
+				Debug: db_debug,
 			}
 		}
 

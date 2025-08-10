@@ -23,7 +23,7 @@ func NewTelegramNotifier(cfg *config.TGConfig) *TelegramNotifier {
 		log.Fatalf("Error connecting to Telegram API: %v", err)
 	}
 
-	bot.Debug = true
+	bot.Debug = cfg.Debug
 
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 	return &TelegramNotifier{
@@ -32,11 +32,15 @@ func NewTelegramNotifier(cfg *config.TGConfig) *TelegramNotifier {
 }
 
 func (tN *TelegramNotifier) Send(notifyUserDTO *dto.NotifyUserRequest) (string, error) {
-	log.Printf("Received message, but send not implemented for Telegram, %v", notifyUserDTO.Body)
 	target, _ := strconv.ParseInt(notifyUserDTO.To, 10, 64)
 	body := notifyUserDTO.Body
 	msg := tgbotapi.NewMessage(target, body)
 	tN.Client.Send(msg)
-
 	return "Message sent", nil
+}
+
+func (tN *TelegramNotifier) GetUpdatesChan() tgbotapi.UpdatesChannel {
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = 30
+	return tN.Client.GetUpdatesChan(u)
 }

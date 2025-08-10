@@ -19,7 +19,7 @@ import (
 func main() {
 	c := make(chan os.Signal, 2)
 
-	cfg, err := config.Load()
+	cfg, err := config.Load(false)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -34,6 +34,14 @@ func main() {
 	telegramNotifier := infra.NewTelegramNotifier(cfg.Telegram)
 
 	notificationService := service.Setup(db, emailNotifier, telegramNotifier)
+	if telegramNotifier != nil {
+		go func() {
+			updates := telegramNotifier.GetUpdatesChan()
+			for update := range updates {
+				notificationService.HandleUpdate(update)
+			}
+		}()
+	}
 	notificationHandler := handler.NewNotificationHandler(notificationService)
 	route.Setup(router, notificationHandler)
 
