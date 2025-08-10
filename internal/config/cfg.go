@@ -32,7 +32,7 @@ type DBConfig struct {
 var Cfg *Config
 var doOnce sync.Once
 
-func Load(db_debug bool) (*Config, error) {
+func Load(tg_debug bool) (*Config, error) {
 	doOnce.Do(func() {
 		_ = godotenv.Load()
 
@@ -59,7 +59,7 @@ func Load(db_debug bool) (*Config, error) {
 		if os.Getenv("TG_KEY") != "" {
 			telegramConfig = &TGConfig{
 				Key:   os.Getenv("TG_KEY"),
-				Debug: db_debug,
+				Debug: tg_debug,
 			}
 		}
 
