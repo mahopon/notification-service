@@ -8,7 +8,7 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-type DatabaseConnection interface {
+type Database interface {
 	Set(bucket, key, value string) error
 	Get(bucket, key string) (string, error)
 }

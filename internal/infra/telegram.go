@@ -1,12 +1,14 @@
 package infra
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	config "github.com/mahopon/notification-service/internal/config"
 	dto "github.com/mahopon/notification-service/internal/dto"
+	util "github.com/mahopon/notification-service/internal/util"
 )
 
 type TelegramNotifier struct {
@@ -33,9 +35,26 @@ func NewTelegramNotifier(cfg *config.TGConfig) *TelegramNotifier {
 
 func (tN *TelegramNotifier) Send(notifyUserDTO *dto.NotifyUserRequest) (string, error) {
 	target, _ := strconv.ParseInt(notifyUserDTO.To, 10, 64)
-	body := notifyUserDTO.Body
+	var cleanedBody string = "\n\n"
+	if notifyUserDTO.Body != "" {
+		if notifyUserDTO.BodyType == "MarkdownV2" {
+			cleanedBody = cleanedBody + util.EscapeMarkdownV2(notifyUserDTO.Body)
+		} else {
+			cleanedBody = cleanedBody + notifyUserDTO.Body
+		}
+	}
+	body := fmt.Sprintf("*%s*%s", notifyUserDTO.Sub, cleanedBody)
 	msg := tgbotapi.NewMessage(target, body)
-	tN.Client.Send(msg)
+	if notifyUserDTO.BodyType == "html" {
+		msg.ParseMode = "html"
+	} else {
+		msg.ParseMode = "MarkdownV2"
+	}
+	_, err := tN.Client.Send(msg)
+	if err != nil {
+		log.Printf("TeleNotifier: Error sending message: %v", err)
+		return "", err
+	}
 	return "Message sent", nil
 }
 
