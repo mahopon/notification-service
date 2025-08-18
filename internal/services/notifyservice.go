@@ -16,11 +16,6 @@ type NotificationService interface {
 	HandleUpdate(update tgbotapi.Update) error
 }
 
-type DefaultNotificationService struct {
-	NotifierMux NotifierRegistry
-	DB          *infra.DatabaseConfig
-}
-
 type NotifierRegistry interface {
 	Register(channel string, n Notifier)
 	Get(channel string) (Notifier, bool)
@@ -28,6 +23,11 @@ type NotifierRegistry interface {
 
 type Notifier interface {
 	Send(notifyUserDTO *dto.NotifyUserRequest) (string, error)
+}
+
+type DefaultNotificationService struct {
+	NotifierMux NotifierRegistry
+	DB          infra.Database
 }
 
 type NotifierMux struct {
@@ -59,9 +59,9 @@ func initService(dbConfig *infra.DatabaseConfig, notifierMux *NotifierMux) Notif
 func (s *DefaultNotificationService) Notify(notifyUserDTO *dto.NotifyUserRequest) (string, error) {
 	channel := notifyUserDTO.Channel
 	notifier, ok := s.NotifierMux.Get(channel)
+	originalTarget := notifyUserDTO.To
 	var reply string
 	var err error
-
 	if channel == "telegram" {
 		bucket := "user_chat"
 		to := notifyUserDTO.To
@@ -84,6 +84,7 @@ func (s *DefaultNotificationService) Notify(notifyUserDTO *dto.NotifyUserRequest
 		log.Printf("Error sending notification: %v", err)
 		return "", err
 	}
+	log.Printf("NotifyService: Successfully sent message to user: %s", originalTarget)
 	return reply, nil
 }
 
@@ -95,11 +96,38 @@ func (s *DefaultNotificationService) HandleUpdate(update tgbotapi.Update) error 
 	switch update.Message.Command() {
 	case "start":
 		userID := update.Message.Chat.UserName
-		_, err := s.DB.Get(bucket, userID)
+		var chatID string
+		chatID, err := s.DB.Get(bucket, userID)
 		if err != nil {
-			chatID := strconv.FormatInt(update.Message.Chat.ID, 10)
+			chatID = strconv.FormatInt(update.Message.Chat.ID, 10)
 			err = s.DB.Set(bucket, userID, chatID)
 			if err != nil {
+				return err
+			}
+			notifyReq := &dto.NotifyUserRequest{
+				To:       userID,
+				Sub:      "User registered for service",
+				Body:     "You will now be able to receive notifications from this bot.",
+				Channel:  "telegram",
+				BodyType: "MarkdownV2",
+			}
+			_, err = s.Notify(notifyReq)
+			if err != nil {
+				log.Printf("ERROR: Unable to reply to registration: %v", err)
+				return err
+			}
+		} else {
+			log.Printf("NotifyService: User already registered, userID: %s, chatID: %s", userID, chatID)
+			notifyReq := &dto.NotifyUserRequest{
+				To:       userID,
+				Sub:      "User already registered",
+				Body:     "You are already registered!",
+				Channel:  "telegram",
+				BodyType: "MarkdownV2",
+			}
+			_, err = s.Notify(notifyReq)
+			if err != nil {
+				log.Printf("ERROR: Unable to reply to existing registration: %v", err)
 				return err
 			}
 		}
