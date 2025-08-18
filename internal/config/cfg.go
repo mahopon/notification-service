@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"sync"
+	"fmt"
 
 	"github.com/joho/godotenv"
 )
@@ -41,8 +42,9 @@ func Load(tg_debug bool) (*Config, error) {
 		}
 
 		cwd, _ := os.Getwd()
+		loc := fmt.Sprintf("%s%s", cwd, os.Getenv("DB_LOC"))
 		dbConfig := &DBConfig{
-			Location: cwd + os.Getenv("DB_LOC"),
+			Location: loc,
 		}
 
 		var mailConfig *MailConfig = nil

@@ -17,6 +17,10 @@ import (
 )
 
 func main() {
+	wd, _ := os.Getwd()
+	if err := os.MkdirAll(wd+"/data", 0755); err != nil {
+		log.Fatalf("Failed to create directory: %v", err)
+	}
 	c := make(chan os.Signal, 2)
 
 	cfg, err := config.Load(false)
