@@ -1,5 +1,7 @@
 #!/bin/bash
 
+go test ./... || { echo "Tests failed"; exit 1; }
+
 docker rm --force notification-service
 docker rmi --force notification-service
 
